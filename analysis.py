@@ -1,10 +1,14 @@
 '''
 Created on 12.05.2021
 
-@author: alexanderfuchs
+@author: Alexander Fuchs
+
+This module has all the implementation, that was used for the analysis.
+So the join, the grouping and the calculation of the performance metrics
+is included in this module. Also most of the data preparation is done in this
+module. For example the majority filtering of the groups is done in this module.
 '''
 
-import numpy
 import collections
 
 import csv
@@ -27,7 +31,7 @@ def joinAndGroupMachineError(pathOfAnalysis):
     
     '''
     The machineErrorDatas and machineErrorPersonShifts must be sorted by the date of getTo() (DESC).
-    Pairs every machine error to every shift of a worker in which the error ocurred.
+    Pairs every machine error to every shift of a worker in which the error occurred.
     The algorithm below is modified due to performance reasons but therefore the lists
     have to be sorted.
     
@@ -185,7 +189,7 @@ def joinAndGroupQualityControl(pathOfAnalysis):
 def joinAndGroup(pathOfAnalysis):
     '''
     Joins and groups the machine Error dataset and quality Control dataset. Lasts many hours!!!
-    Because it needs so much time it first trys to load the joined data from files which already
+    Because it needs so much time it first tries to load the joined data from files which already
     contain the joined Data. So the calculation has only to be done once. If it cannot be loaded
     it is calculated instead.
     '''
@@ -358,65 +362,6 @@ def getShiftsOfPerson(person):
         if cp.machineErrorPersonShifts[i].getHash() == person:
             shifts.append((cp.machineErrorPersonShifts[i].getOf(), cp.machineErrorPersonShifts[i].getTo()))
     return shifts
-                    
-   
-'''
-Has a bug. Was used until it is discovered as wrong. Only here for documentation reasons.
-
-def timeOfGroup(group, groupToMachineError):
-    machineErrorsOfGroup = []
-    for i in range(len(groupToMachineError)):
-        if groupToMachineError[i][0] == group:
-            machineErrorsOfGroup.append(cp.machineErrorDatas[groupToMachineError[i][1]])
-    
-    personShifts = []
-    for i in range(len(group)):
-        personShifts.append(getShiftsOfPersonAndOfMachineErrors(group[i], machineErrorsOfGroup))
-        
-    maxIndex = 0
-    for i in range(len(personShifts)):
-        if len(personShifts[i]) > len(personShifts[maxIndex]):
-            maxIndex = i
-      
-      
-    sumOfDeltas = datetime.timedelta(0)   
-    for i in range(len(personShifts[maxIndex])):  
-        timeIntersection = personShifts[maxIndex][i] 
-        
-        for y in range(len(personShifts)):
-            if y != maxIndex:
-                hit = False
-                x = 0
-                
-                while x < len(personShifts[y]) and not hit:
-                    toIntersect = personShifts[y][x]
-                    
-                    if timeIntersection[0] <= toIntersect[0] <= timeIntersection[1]:
-                        timeIntersection = (toIntersect[0], timeIntersection[1])
-                        hit = True
-                    elif toIntersect[0] <= timeIntersection[0] <= toIntersect[1]:
-                        timeIntersection = (timeIntersection[0], toIntersect[1])
-                        hit = True
-                    x += 1
-                   
-        sumOfDeltas += timeIntersection[1] - timeIntersection[0]
-  
-    return sumOfDeltas
-                
-                
-def getShiftsOfPersonAndOfMachineErrors(person, machineErrors):
-    shifts = []
-    for i in range(len(cp.machineErrorPersonShifts)):
-        if cp.machineErrorPersonShifts[i].getHash() == person:
-            shift = cp.machineErrorPersonShifts[i]
-            
-            for u in range(len(machineErrors)):
-                if shift.getOf() <= machineErrors[u].getOf() \
-                and machineErrors[u].getTo() <= shift.getTo():
-                    shifts.append((shift.getOf(), shift.getTo()))
-                    break
-    return shifts
-'''
 
      
 def divideGroupToQualityControl(earlyTwelve, nightTwelve, early, late, night):
@@ -679,94 +624,6 @@ def writeAnalysisToCSV(pathOfAnalysis):
         for i in range(len(cp.percentageOfErrorGroup)):
             element = cp.percentageOfErrorGroup[i]
             writer.writerow([element[0], element[1], element[2], element[3], element[4]])
-            
-            
-def analyzeGroups():    
-    '''
-    This analysis checks with what data the analysis is started. The hours at personal change are
-    already filtered in cp.machineErrorDatas and cp.qualityControlDatas. On top of that, in every
-    group all not wanted members are filtered out. This is done through the planGroup. So only
-    members of the majority of the planGroup are saved in the group. Also groups with no
-    majority are filtered out. After that all unusual group Lengths are also filtered.
-    
-    So this step calculates every important information that is needed, to understand with what
-    data the analysis is done.
-    '''    
-    groupLengthsOfEvents = []
-    for i in range(len(cp.groupToMachineError)):
-        groupLengthsOfEvents.append(len(cp.groupToMachineError[i][0]))
-    
-    print('--------------------------------------------------------------------------')
-    print(f'MachineError: Group Lengths of Events Avg: {numpy.mean(groupLengthsOfEvents)}.')
-    print(f'MachineError: Group Lengths of Events Var: {numpy.var(groupLengthsOfEvents)}.')
-    print(f'MachineError: Group Lengths of Events Dict: {collections.Counter(groupLengthsOfEvents).most_common(None)}.')
-    
-    groupLengthsOfEvents = []
-    for i in range(len(cp.groupToQualityControl)):
-        groupLengthsOfEvents.append(len(cp.groupToQualityControl[i][0]))
-    
-    print('--------------------------------------------------------------------------')
-    print(f'QualityControl: Group Length of Events Avg: {numpy.mean(groupLengthsOfEvents)}.')
-    print(f'QualityControl: Group Length of Events Var: {numpy.var(groupLengthsOfEvents)}.')
-    print(f'QualityControl: Group Lengths of Events Dict: {collections.Counter(groupLengthsOfEvents)}.')
-    
-    
-def analyzeEvents():
-    '''
-    was implemented to check if the avg machineError Time has changed while the 04.19 - 05.19 to the rest of the time.
-    -> result: it did not change siginficantly
-    '''
-    listWithCorona = []
-    listWithoutCorona = []
-    for i in range(len(cp.machineErrorDatas)):
-        if datetime.datetime(2019, 4, 1) <= cp.machineErrorDatas[i].getTo() <= datetime.datetime(2019, 5, 31):
-            listWithCorona.append(cp.machineErrorDatas[i])
-        else:
-            listWithoutCorona.append(cp.machineErrorDatas[i])
-            
-    listWithCorona.sort(key=lambda x: x.getErrorCode())
-    listWithoutCorona.sort(key=lambda x: x.getErrorCode())
-            
-    result = []
-    avg = listWithCorona[0].getTo() - listWithCorona[0].getOf()
-    counter = 1
-    for i in range(1, len(listWithCorona) - 1):
-        if listWithCorona[i-1].getErrorCode() == listWithCorona[i].getErrorCode():
-            avg += listWithCorona[i].getTo() - listWithCorona[i].getOf()
-            counter += 1
-        else:
-            avg = avg / counter
-            result.append((listWithCorona[i-1].getErrorCode(), avg.total_seconds() / 60))
-            
-            avg = listWithCorona[i].getTo() - listWithCorona[i].getOf()
-            counter = 1
-            
-    if counter > 0:
-        avg = avg / counter
-        result.append((listWithCorona[len(listWithCorona) - 1].getErrorCode(), avg.total_seconds() / 60))
-        
-    print('--------------------------------------------------------------------------')
-    print(f'machineError: Avg Time of the errors for every errorCode while 04.19 - 05.19: {result}')
-        
-    result = []
-    avg = listWithoutCorona[0].getTo() - listWithoutCorona[0].getOf()
-    counter = 1
-    for i in range(1, len(listWithoutCorona) - 1):
-        if listWithoutCorona[i-1].getErrorCode() == listWithoutCorona[i].getErrorCode():
-            avg += listWithoutCorona[i].getTo() - listWithoutCorona[i].getOf()
-            counter += 1
-        else:
-            avg = avg / counter
-            result.append((listWithoutCorona[i-1].getErrorCode(), avg.total_seconds() / 60))
-            
-            avg = listWithoutCorona[i].getTo() - listWithoutCorona[i].getOf()
-            counter = 1
-            
-    if counter > 0:
-        avg = avg / counter
-        result.append((listWithoutCorona[len(listWithoutCorona) - 1].getErrorCode(), avg.total_seconds() / 60))
-        
-    print(f'machineError: Avg Time of the errors for every errorCode while the rest of the time: {result}')
     
         
 def calculateAnalyze(pathOfAnalysis):

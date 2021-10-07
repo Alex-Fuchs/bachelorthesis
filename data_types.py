@@ -1,7 +1,11 @@
 '''
 Created on 08.05.2021
 
-@author: alexanderfuchs
+@author: Alexander Fuchs
+
+This module contains the classes for the representation of the entries of the
+.csv tables. So one entry is an object of one of the classes. The objects are
+programmed to be immutable. Only create new objects with the factory methods!!!
 '''
 
 from datetime import datetime

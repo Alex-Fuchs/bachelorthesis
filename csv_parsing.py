@@ -1,7 +1,13 @@
 '''
 Created on 08.05.2021
 
-@author: alexanderfuchs
+@author: Alexander Fuchs
+
+This module implements the loading of all .csv files.
+So the 4 tables of the 2 datasets are loaded in this module. Also
+the joined and grouped data is loaded in this module. The sorting
+of the lists is also done in this module after loading. Some
+data preparation is also done in this module.
 '''
 
 import csv
