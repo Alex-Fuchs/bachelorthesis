@@ -233,7 +233,9 @@ def analyzeMachineError(groupToMachineErrorOfShift, shift):
     the Sorting in csv_parsing. For every group and errorCode the average Time of the machineErrors
     with that errorCode and that group are calculated. Also For every group and errorCode the % of
     the sum of all machineErrors with that errorCode and that group to the total working time
-    of the group is calculated.
+    of the group is calculated. The total working time of groups is calculated approximative,
+    so the results of cp.percentageOfMachineErrorInTotalTime are inaccurate and have to be
+    viewed with caution!!! More details in calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift).
     
     The results are saved in cp.averageMachineErrorTime and cp.percentageOfMachineErrorInTotalTime.
     '''
@@ -259,13 +261,16 @@ def analyzeMachineError(groupToMachineErrorOfShift, shift):
                         timeOfGroupSaved = groupToTime[i][1]
                      
             avgTime = sum(timedeltas, datetime.timedelta(0)) / len(timedeltas)
-            percentage = sum(timedeltas, datetime.timedelta(0)) / timeOfGroupSaved
             
             cp.averageMachineErrorTime.append((lastTuple[0], shift, \
             cp.machineErrorDatas[lastTuple[1]].getErrorCode(), avgTime))
             
-            cp.percentageOfMachineErrorInTotalTime.append((lastTuple[0],shift, \
-            cp.machineErrorDatas[lastTuple[1]].getErrorCode(), percentage))
+            #because of the inaccurate calculation, timeOfGroup can be 0!
+            if timeOfGroupSaved != datetime.timedelta(0):
+                percentage = sum(timedeltas, datetime.timedelta(0)) / timeOfGroupSaved
+            
+                cp.percentageOfMachineErrorInTotalTime.append((lastTuple[0],shift, \
+                cp.machineErrorDatas[lastTuple[1]].getErrorCode(), percentage))
             
             elementToList = cp.machineErrorDatas[thisTuple[1]]
             timedeltas = [elementToList.getTo() - elementToList.getOf()]
@@ -285,7 +290,7 @@ def analyzeMachineError(groupToMachineErrorOfShift, shift):
 def calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift):
     '''
     Calculates the total working time of all groups. The algorithm does only
-    provide approximated times, not the perfect ones. There is no assurance
+    provide approximated times, not the real ones. There is no assurance
     how accurate these times are. So the results have to be viewed with caution!!!
     '''
     group = groupToMachineErrorOfShift[0][0]
@@ -312,7 +317,7 @@ def timeOfGroup(group):
     
     The time is only calculated approximately. This is the reason why the results of 
     calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift) are also
-    approximately.
+    approximately and inaccurate.
     '''
     personShifts = []
     for i in range(len(group)):
