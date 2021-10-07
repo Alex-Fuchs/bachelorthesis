@@ -49,7 +49,7 @@ class PersonShift(object):
             toDateTime = _parseDate(to)
             sinceDateTime = datetime.strptime(since, '%Y-%m-%d')
             
-            if ofDateTime.year > 2015 and toDateTime.year > 2015 and sinceDateTime.year > 1970:
+            if ofDateTime.year >= 2019 and toDateTime.year >= 2019:
                 return cls(int(personHash), int(group), sinceDateTime, ofDateTime, toDateTime)
             else:
                 return None
@@ -79,9 +79,6 @@ class MachineErrorData(object):
         self.__errorCode = errorCode
         self.__of = of
         self.__to = to
-        
-    def __str__(self, *args, **kwargs):
-        return f'[{self.__of}, {self.__to}, {self.__errorCode}, {self.__source}]'
 
     def getSource(self):
         return self.__source
@@ -115,7 +112,7 @@ class MachineErrorData(object):
 class QualityControlData(object):
     '''
     Saves all data of one entry of the quality control table.
-    datum describes the datetime when the quality was controled.
+    datum describes the datetime when the quality was controlled.
     productType defines the type that was controlled, saved as int.
     number defines the number of products that was controled.
     errorCode defines the error, saved as int.
@@ -133,9 +130,7 @@ class QualityControlData(object):
         self.__number = number
         self.__errorCode = errorCode
         self.__errorGroup = errorGroup
-        
-    def __str__(self, *args, **kwargs):
-        return f'[{self.__datum}, {self.__productType}, {self.__number}, {self.__errorCode}, {self.__errorGroup}]'
+
 
     def getDatum(self):
         return self.__datum
@@ -169,7 +164,7 @@ class QualityControlData(object):
         
         
 def _parseDate(text):
-    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f'):   #these 2 dateformats were used
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M:%S.%f'):   #these 2 dateformats were used in the initial data
         try:
             return datetime.strptime(text, fmt)
         except ValueError:
@@ -178,7 +173,7 @@ def _parseDate(text):
 
 
 def _checkDate(date):
-    if date.year < 2015:                           #date does not make sense
+    if date.year < 2019:                           #date does not make sense
         return False
     elif date.hour == 5 or date.hour == 6:         #5-6 end of nightshift, 6-7 am begin of early stage
         return False

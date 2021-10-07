@@ -16,10 +16,12 @@ qualityControlDatas = []
 machineErrorPersonShifts = []
 machineErrorDatas = []
 
+#joinOfProductionMetricsAndWorkingTimesOfWorkers
+
 groupToMachineError = []
 groupToQualityControl = []
 
-#results of analysis
+#performance metrics for groups
 
 averageMachineErrorTime = []
 percentageOfMachineErrorInTotalTime = []
@@ -29,6 +31,11 @@ percentageOfErrorGroup = []
 percentageOfErrorGroupInErrorCode = []
 
 def loadMachineErrorData(personFilename, machineErrorFilename):
+    '''
+    Loads all the data from the tables of the machineErrorDataset to the lists. 'Processed' means how much entries
+    were saved in the table. 'Saved' means how much entries are saved to the lists. the difference
+    was data that is wrong.
+    '''
     global machineErrorDatas, machineErrorPersonShifts
     with open(personFilename) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter = ',')
@@ -39,7 +46,7 @@ def loadMachineErrorData(personFilename, machineErrorFilename):
                 if personShift is not None:
                     machineErrorPersonShifts.append(personShift)
             lineCount += 1
-    print(f'MachineError Persons: Processed {lineCount}. Added {len(machineErrorPersonShifts)} at {datetime.datetime.now()}.')
+    print(f'MachineError Persons: Processed {lineCount}. Saved {len(machineErrorPersonShifts)} at {datetime.datetime.now()}.')
             
     with open(machineErrorFilename) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter = ',')
@@ -51,10 +58,15 @@ def loadMachineErrorData(personFilename, machineErrorFilename):
                     machineErrorDatas.append(machineData)
             lineCount += 1
     print('--------------------------------------------------------------------------')
-    print(f'MachineError Data: Processed {lineCount}. Added {len(machineErrorDatas)} at {datetime.datetime.now()}.')
+    print(f'MachineError Data: Processed {lineCount}. Saved {len(machineErrorDatas)} at {datetime.datetime.now()}.')
 
         
 def loadQualityControlData(personFilename, qualityControlFilename):
+    '''
+    Loads all the data from the tables of the qualityControlDataSet to the lists. 'Processed' means how much entries
+    were saved in the table. 'Saved' means how much entries are saved to the lists. the difference
+    was data that is wrong.
+    '''
     global qualityControlDatas, qualityControlPersonShifts
     with open(personFilename) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter = ',')
@@ -66,7 +78,7 @@ def loadQualityControlData(personFilename, qualityControlFilename):
                     qualityControlPersonShifts.append(personShift)
             lineCount += 1
     print('--------------------------------------------------------------------------')
-    print(f'QualityControl Persons: Processed {lineCount}. Added {len(qualityControlPersonShifts)} at {datetime.datetime.now()}.')
+    print(f'QualityControl Persons: Processed {lineCount}. Saved {len(qualityControlPersonShifts)} at {datetime.datetime.now()}.')
             
     with open(qualityControlFilename) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter = ',')
@@ -78,10 +90,15 @@ def loadQualityControlData(personFilename, qualityControlFilename):
                     qualityControlDatas.append(qualityData)
             lineCount += 1
     print('--------------------------------------------------------------------------')
-    print(f'QualityControl Data: Processed {lineCount}. Added {len(qualityControlDatas)} at {datetime.datetime.now()}.')
+    print(f'QualityControl Data: Processed {lineCount}. Saved {len(qualityControlDatas)} at {datetime.datetime.now()}.')
     
             
 def loadAllData(machineErrorPersons, machineErrors, qualityControlPersons, qualityControls):
+    '''
+    Loads all tables from the machineErrorDataset and the qualityControlDataset. Also all
+    lists are sorted by the date of the entries (DESC). If there are two dates per entry
+    the list ist sorted by the end of the intervall (DESC).
+    '''
     global machineErrorDatas, machineErrorPersonShifts, qualityControlDatas, qualityControlPersonShifts
     
     loadMachineErrorData(machineErrorPersons, machineErrors) 
@@ -101,6 +118,13 @@ def loadAllData(machineErrorPersons, machineErrors, qualityControlPersons, quali
     
     
 def loadGroupData(pathOfAnalysis):
+    '''
+    Try to load the files of the joined Data to the lists. If there are no files or the parsing
+    is not successful, the loading is stopped and the calculation is started.
+    Calculation lasts many hours!!! Therefore the calculation is only done once and then
+    saved so the joined data can be loaded and has not to be calculated again.
+    The lists are also sorted by different criteria.
+    '''
     global groupToMachineError, groupToQualityControl
     try:
         with open(pathOfAnalysis + 'groupToMachineError.csv') as groupToMachineErrorFile:
@@ -119,7 +143,7 @@ def loadGroupData(pathOfAnalysis):
         print('--------------------------------------------------------------------------')
         print(f'Join and Grouping of Quality Control Data has been loaded at {datetime.datetime.now()}.')
         
-        #sort the two lists by groups. This is needed in the next step
+        #sort the two lists by different criteria. This is needed in the next step
         groupToMachineError.sort(key=lambda x: (x[0], machineErrorDatas[x[1]].getErrorCode()))
         print('--------------------------------------------------------------------------')
         print(f'Sorted groupToMachineError at {datetime.datetime.now()}.')

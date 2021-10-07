@@ -12,6 +12,14 @@ import datetime
 import csv_parsing as cp
     
 def joinAndGroupMachineError(pathOfAnalysis):
+    '''
+    Joins the 2 lists of the machineErrorDataset. Do not change the Sorting
+    of the entries of the 2 lists, that was done at loading the tables!!! The
+    whole join only works with the Sorting, that was done in csv_parsing.
+    
+    machineErrorDatas.sort(key=lambda x: x.getTo(), reverse=True)
+    machineErrorPersonShifts.sort(key=lambda x: x.getTo(), reverse=True)
+    '''
     machineErrorToPerson = []
     
     print('--------------------------------------------------------------------------')
@@ -19,7 +27,7 @@ def joinAndGroupMachineError(pathOfAnalysis):
     
     '''
     The machineErrorDatas and machineErrorPersonShifts must be sorted by the date of getTo() (DESC).
-    Pairs every machine errors to every person who worked at that time the error ocurred.
+    Pairs every machine error to every shift of a worker in which the error ocurred.
     The algorithm below is modified due to performance reasons but therefore the lists
     have to be sorted.
     
@@ -42,8 +50,11 @@ def joinAndGroupMachineError(pathOfAnalysis):
     
     '''
     machineErrorToPerson has to be sorted by the first element otherwise the following algorithm
-    does not work. The algorithm maps all the persons of one machine error to this error as a
+    does not work. machineErrorToPerson is already sorted due to the algorithm before.
+    The algorithm maps all the persons of one machine error to the machine error as a
     group.
+    
+    the algorithm also includes one step of the  data preparation.
     '''
     with open(pathOfAnalysis + 'groupToMachineError.csv', mode='w') as groupToMachineErrorFile:
         writer = csv.writer(groupToMachineErrorFile, delimiter=',',\
@@ -54,6 +65,12 @@ def joinAndGroupMachineError(pathOfAnalysis):
             if machineErrorToPerson[i-1][0] == machineErrorToPerson[i][0]:
                 groupList.append(cp.machineErrorPersonShifts[machineErrorToPerson[i][1]])
             else:
+                '''
+                this data preparation that was done due to the oversized groups.
+                Many groups include workers that are not working at the time of the
+                machine error. The reason for that is that they are preparing for their
+                work or the are leaving the work during the machine error.
+                '''
                 mostFrequentItem = collections.Counter([x.getGroup() for x in groupList]).most_common(1)[0]
                 
                 if mostFrequentItem[1] > len(groupList) / 2: 
@@ -81,6 +98,14 @@ def joinAndGroupMachineError(pathOfAnalysis):
        
     
 def joinAndGroupQualityControl(pathOfAnalysis):
+    '''
+    Joins the 2 lists of the qualityControlDataset. Do not change the Sorting
+    of the entries of the 2 lists, that was done at loading the tables!!! The
+    whole join only works with the Sorting, that was done in csv_parsing.
+    
+    qualityControlDatas.sort(key=lambda x: x.getDatum(), reverse=True)
+    qualityControlPersonShifts.sort(key=lambda x: x.getTo(), reverse=True)
+    '''
     qualityControlToPerson = []
     
     print('--------------------------------------------------------------------------')
@@ -88,8 +113,7 @@ def joinAndGroupQualityControl(pathOfAnalysis):
     
     '''
     The qualityControlDatas and qualityControlPersonShifts must be sorted by the date of getTo()
-    and date (DESC).
-    Pairs every quality Control to every person who worked at that time.
+    and date (DESC). Pairs every quality Control to every shift of a worker who worked at that time.
     The algorithm below is modified due to performance reasons but therefore the lists
     have to be sorted.
     
@@ -112,7 +136,10 @@ def joinAndGroupQualityControl(pathOfAnalysis):
     
     '''
     qualityControlToPerson has to be sorted by the first element otherwise the following algorithm
-    does not work. The algorithm maps all the persons of one quality control.
+    does not work. qualityControlToPerson is already sorted due to the algorithm before.
+    The algorithm maps all the persons of one quality control to the quality control as a group.
+    
+    the algorithm also includes one step of the  data preparation.
     '''
     with open(pathOfAnalysis + 'groupToQualityControl.csv', mode='w') as groupToQualityControlFile:
         writer = csv.writer(groupToQualityControlFile, delimiter=',',\
@@ -123,6 +150,12 @@ def joinAndGroupQualityControl(pathOfAnalysis):
             if qualityControlToPerson[i-1][0] == qualityControlToPerson[i][0]:
                 groupList.append(cp.qualityControlPersonShifts[qualityControlToPerson[i][1]])
             else:
+                '''
+                this data preparation that was done due to the oversized groups.
+                Many groups include workers that are not working at the time of the
+                quality control. The reason for that is that they are preparing for their
+                work or the are leaving the work during the quality control.
+                '''
                 mostFrequentItem = collections.Counter([x.getGroup() for x in groupList]).most_common(1)[0]
                 
                 if mostFrequentItem[1] > len(groupList) / 2:
@@ -151,14 +184,16 @@ def joinAndGroupQualityControl(pathOfAnalysis):
     
 def joinAndGroup(pathOfAnalysis):
     '''
-    Joins and groups the machine Error and quality Control Data. Because it needs so much time
-    it first trys to load. If it cannot be loaded it is calculated.
+    Joins and groups the machine Error dataset and quality Control dataset. Lasts many hours!!!
+    Because it needs so much time it first trys to load the joined data from files which already
+    contain the joined Data. So the calculation has only to be done once. If it cannot be loaded
+    it is calculated instead.
     '''
     if not cp.loadGroupData(pathOfAnalysis):
         joinAndGroupMachineError(pathOfAnalysis)
         joinAndGroupQualityControl(pathOfAnalysis)
         if not cp.loadGroupData(pathOfAnalysis):
-            raise RuntimeError('Illegal State: Bug in loading or joinAndGroup!!!')
+            raise RuntimeError('Illegal State: Bug in loading or joinAndGroup!')
      
 
 def divideGroupToMachineError(earlyTwelve, nightTwelve, early, late, night):
@@ -190,14 +225,14 @@ def divideGroupToMachineError(earlyTwelve, nightTwelve, early, late, night):
     
 def analyzeMachineError(groupToMachineErrorOfShift, shift):    
     '''
-    groupToMachineError has to be sorted by group first and errorCode second. Therefore for every
-    group and errorCode the average Time of the machineErrors with that errorCode and that group
-    are calculated. Also the percentage of a errorCode in the total worktime of a group is
-    calculated.
+    groupToMachineError has to be sorted by group first and errorCode second!!! Do not change
+    the Sorting in csv_parsing. For every group and errorCode the average Time of the machineErrors
+    with that errorCode and that group are calculated. Also For every group and errorCode the % of
+    the sum of all machineErrors with that errorCode and that group to the total working time
+    of the group is calculated.
     
     The results are saved in cp.averageMachineErrorTime and cp.percentageOfMachineErrorInTotalTime.
     '''
-    
     groupToTime = []
     calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift)
     
@@ -220,10 +255,7 @@ def analyzeMachineError(groupToMachineErrorOfShift, shift):
                         timeOfGroupSaved = groupToTime[i][1]
                      
             avgTime = sum(timedeltas, datetime.timedelta(0)) / len(timedeltas)
-            if timeOfGroupSaved != datetime.timedelta(0):
-                percentage = sum(timedeltas, datetime.timedelta(0)) / timeOfGroupSaved
-            else:
-                percentage = - 1.5
+            percentage = sum(timedeltas, datetime.timedelta(0)) / timeOfGroupSaved
             
             cp.averageMachineErrorTime.append((lastTuple[0], shift, \
             cp.machineErrorDatas[lastTuple[1]].getErrorCode(), avgTime))
@@ -237,8 +269,7 @@ def analyzeMachineError(groupToMachineErrorOfShift, shift):
     if len(timedeltas) > 0:
         lastTuple = groupToMachineErrorOfShift[len(groupToMachineErrorOfShift) - 1]
         avgTime = sum(timedeltas, datetime.timedelta(0)) / len(timedeltas)
-        percentage = sum(timedeltas, datetime.timedelta(0)) \
-        / groupToTime[len(groupToTime) - 1][1]
+        percentage = sum(timedeltas, datetime.timedelta(0)) / groupToTime[len(groupToTime) - 1][1]
         
         cp.averageMachineErrorTime.append((lastTuple[0], shift, \
         cp.machineErrorDatas[lastTuple[1]].getErrorCode(), avgTime))
@@ -249,33 +280,36 @@ def analyzeMachineError(groupToMachineErrorOfShift, shift):
                     
 def calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift):
     '''
-    Calculates the time of all groups in the right way. timeOfGroup does not bring the right total
-    time.
+    Calculates the total working time of all groups. The algorithm does only
+    provide approximated times, not the perfect ones. There is no assurance
+    how accurate these times are. So the results have to be viewed with caution!!!
     '''
     group = groupToMachineErrorOfShift[0][0]
     for i in range(1, len(groupToMachineErrorOfShift)):
         if group != groupToMachineErrorOfShift[i][0]:
-            groupToTime.append((group, timeOfGroupSnd(group)))
+            groupToTime.append((group, timeOfGroup(group)))
             group = groupToMachineErrorOfShift[i][0]
             
-    groupToTime.append((group, timeOfGroupSnd(group)))
+    groupToTime.append((group, timeOfGroup(group)))
       
     for i in range(len(groupToTime)):
         for u in range(len(groupToTime)):
             if i != u and set(groupToTime[i][0]).issubset(set(groupToTime[u][0])):
                 groupToTime[i] = (groupToTime[i][0], groupToTime[i][1] - groupToTime[u][1])
-      
-    sumOfDeltas = datetime.timedelta(0)
-    for i in range(len(groupToTime)):
-        sumOfDeltas += groupToTime[i][1]
-                
-    realSum = datetime.datetime(2020, 4, 29, 5, 47, 0) - datetime.datetime(2019, 2, 7, 16, 0, 0)
-    
-    print('--------------------------------------------------------------------------')
-    print(f'MachineError Data: Accuracy: {sumOfDeltas / realSum} at {datetime.datetime.now()}.')
     
     
-def timeOfGroupSnd(group):
+def timeOfGroup(group):
+    '''
+    calculates the working time, at which the group was at least present. That means
+    that there are also times included in which more workers than the group were present.
+    in calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift) the time of
+    bigger groups is subtracted, so the times correspond to the real ones.
+    
+    
+    The time is only calculated approximately. This is the reason why the results of 
+    calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift) are also
+    approximately.
+    '''
     personShifts = []
     for i in range(len(group)):
         personShifts.append(getShiftsOfPerson(group[i]))
@@ -325,12 +359,11 @@ def getShiftsOfPerson(person):
             shifts.append((cp.machineErrorPersonShifts[i].getOf(), cp.machineErrorPersonShifts[i].getTo()))
     return shifts
                     
-            
+   
+'''
+Has a bug. Was used until it is discovered as wrong. Only here for documentation reasons.
+
 def timeOfGroup(group, groupToMachineError):
-    '''
-    This function calculates the time a group spent together working. This is necessary for
-    calculating the percentage of every machineError to the whole working time.
-    '''
     machineErrorsOfGroup = []
     for i in range(len(groupToMachineError)):
         if groupToMachineError[i][0] == group:
@@ -372,10 +405,6 @@ def timeOfGroup(group, groupToMachineError):
                 
                 
 def getShiftsOfPersonAndOfMachineErrors(person, machineErrors):
-    '''
-    Returns a list with all shifts of one person, in that at least one machine Error of 
-    machineErrors occured.
-    '''
     shifts = []
     for i in range(len(cp.machineErrorPersonShifts)):
         if cp.machineErrorPersonShifts[i].getHash() == person:
@@ -387,6 +416,7 @@ def getShiftsOfPersonAndOfMachineErrors(person, machineErrors):
                     shifts.append((shift.getOf(), shift.getTo()))
                     break
     return shifts
+'''
 
      
 def divideGroupToQualityControl(earlyTwelve, nightTwelve, early, late, night):
@@ -417,7 +447,11 @@ def divideGroupToQualityControl(earlyTwelve, nightTwelve, early, late, night):
 
 def analyzeErrorGroup(groupToQualityControlOfShift, shift):
     '''
-    Calculates the % of errorGroups for all groups and productTypes.
+    This algorithm does not need a sorting of the lists because the sorting is done
+    here individually. For every group and every productType the % of an errorGroup
+    is calculated.
+    
+    The result is saved in cp.percentageOfErrorGroup.
     '''
     sortedByErrorGroup = sorted(groupToQualityControlOfShift, \
     key=lambda x: (x[0], cp.qualityControlDatas[x[1]].getProductType(), \
@@ -452,9 +486,11 @@ def analyzeErrorGroup(groupToQualityControlOfShift, shift):
             
 def groupQualityControlsPerErrorGroup(group, shift, productType, elementsOfProductType, counterOfProductType):
     '''
-    Calculates the % of a every Error Group of one product Type of one group. The elements of the
-    productType and the group must already been filtered. Also a counter for all elements of the
-    productType (getNumber()) is given, so it is not necessary to calculate it here.
+    Calculates the % of every Error Group of one product Type of one group. The quality controls of the
+    productType and the group must already be provided through elementsOfProductType. Also a counter
+    for all quality controls of the productType and group must already be provided through counterOfProductType.
+    
+    Some quality controls contain a negative number. In that case 0 is added.
     '''
     sumOfErrorGroup = 0 if elementsOfProductType[0].getNumber() < 0 else elementsOfProductType[0].getNumber()
     
@@ -476,12 +512,11 @@ def groupQualityControlsPerErrorGroup(group, shift, productType, elementsOfProdu
 def analyzeErrorCodes(groupToQualityControlOfShift, shift):    
     '''
     groupToQualityControl has to be sorted by group first, productType second, errorCode third and
-    errorGroup fourth. Therefore for every group and productType, the % of every errorCode and
-    errorGroup is calculated. With this information the % of every errorGroup can be easily calculated.
-    Also the % of every errorGroup in one errorCode is calculated.
+    errorGroup fourth!!! Do not change the sorting in csv_parsing. For every group and productType is
+    the % of an combination of errorCode and errorGroup calculated. Also for every group and productType
+    and errorCode the % of an errorGroup is calculated.
     
-    The results are saved in cp.percentageOfErrorCodeAndErrorGroup 
-    and cp.percentageOfErrorGroup and cp.percentageOfErrorGroupInErrorCode.
+    The results are saved in cp.percentageOfErrorCodeAndErrorGroup and cp.percentageOfErrorGroupInErrorCode.
     '''
     thisQualityControl = cp.qualityControlDatas[groupToQualityControlOfShift[0][1]]
     elementsOfProductType = [thisQualityControl]
@@ -512,8 +547,9 @@ def analyzeErrorCodes(groupToQualityControlOfShift, shift):
     
 def groupQualityControlsPerErrorCode(group, shift, productType, elementsOfProductType, counterOfProductType):  
     '''
-    Does the grouping of errorCodes. This is done seperately because the number per
-    productType is needed.
+    Does the grouping of errorCodes. This had to be done separately. elementsOfProductType provides all
+    quality controls of one group and productType. Also a counter for all quality controls of the
+    productType and group must already be provided through counterOfProductType.
     '''  
     elementsOfErrorCode = [elementsOfProductType[0]]
     
@@ -530,10 +566,12 @@ def groupQualityControlsPerErrorCode(group, shift, productType, elementsOfProduc
     
 def calculatePercentages(group, shift, productType, elementsOfErrorCode, counterOfProductType):
     '''
-    Calculates the percentages for a group and a productType in a shift. Calculates percentages
-    of errorGroups and errorCodes and also percentages of errorgroups in specific errorCodes.
-    If the number of the whole productType is 0 or of the errorCode is 0 (Possible due to
-    correction) the calculation is not finished.
+    Calculates for a group and a produtType and a errorCode the % of all errorGroups. Calculates also
+    for a group and a productType the % of one combination of errorCode and errorGroup. The quality controls
+    of the group and the productType and the errorCode must already be given through elementsOfErrorCode. Also
+    the counter for the productType and the group must be provided through counterOfProductType.
+    
+    Some quality controls contain a negative number. In that case 0 is added.
     '''
     counterErrorGroupZero = 0
     counterErrorGroupOne = 0
@@ -587,6 +625,9 @@ def calculatePercentages(group, shift, productType, elementsOfErrorCode, counter
             
             
 def analyzeQualityControl(groupToQualityControlOfShift, shift):
+    '''
+    Starts the 2 analysis methods of the quality control dataset.
+    '''
     analyzeErrorCodes(groupToQualityControlOfShift, shift)
     analyzeErrorGroup(groupToQualityControlOfShift, shift)
         
@@ -654,76 +695,81 @@ def analyzeGroups():
     groupLengthsOfEvents = []
     for i in range(len(cp.groupToMachineError)):
         groupLengthsOfEvents.append(len(cp.groupToMachineError[i][0]))
-        
-    groupLengthAppearance = []
-    for length in range(35):
-        tmp = []
-        for i in range(len(cp.groupToMachineError)):
-            if len(cp.groupToMachineError[i][0]) == length:
-                tmp.append(cp.machineErrorDatas[cp.groupToMachineError[i][1]].getOf())
-        
-        onePercentOfLength = len(tmp) / 100
-        tmp = map(lambda x: datetime.date(x.year, x.month, 1), tmp)
-        tmp = collections.Counter(tmp).most_common(None)
-            
-        counter = 0
-        for u in range(len(tmp)):
-            if tmp[u][1] > onePercentOfLength:
-                counter += 1
-        groupLengthAppearance.append(counter)
     
     print('--------------------------------------------------------------------------')
     print(f'MachineError: Group Lengths of Events Avg: {numpy.mean(groupLengthsOfEvents)}.')
     print(f'MachineError: Group Lengths of Events Var: {numpy.var(groupLengthsOfEvents)}.')
     print(f'MachineError: Group Lengths of Events Dict: {collections.Counter(groupLengthsOfEvents).most_common(None)}.')
-    print(f'MachineError: Appearance of Group Lengths: {groupLengthAppearance}.')
     
     groupLengthsOfEvents = []
     for i in range(len(cp.groupToQualityControl)):
         groupLengthsOfEvents.append(len(cp.groupToQualityControl[i][0]))
-        
-    groupLengthAppearance = []
-    for length in range(24):
-        tmp = []
-        for i in range(len(cp.groupToQualityControl)):
-            if len(cp.groupToQualityControl[i][0]) == length:
-                tmp.append(cp.qualityControlDatas[cp.groupToQualityControl[i][1]].getDatum())
-        
-        if tmp != []:
-            if 10 <= length <= 14:
-                tmp = map(lambda x: datetime.date(x.year, x.month, 1), tmp)
-                groupLengthAppearance.append(collections.Counter(tmp))
-        else:
-            groupLengthAppearance.append('No Date')
     
     print('--------------------------------------------------------------------------')
     print(f'QualityControl: Group Length of Events Avg: {numpy.mean(groupLengthsOfEvents)}.')
     print(f'QualityControl: Group Length of Events Var: {numpy.var(groupLengthsOfEvents)}.')
     print(f'QualityControl: Group Lengths of Events Dict: {collections.Counter(groupLengthsOfEvents)}.')
-    print(f'QualityControl: Appearance of Group Lengths: {groupLengthAppearance}.')
+    
+    
+def analyzeEvents():
+    '''
+    was implemented to check if the avg machineError Time has changed while the 04.19 - 05.19 to the rest of the time.
+    -> result: it did not change siginficantly
+    '''
+    listWithCorona = []
+    listWithoutCorona = []
+    for i in range(len(cp.machineErrorDatas)):
+        if datetime.datetime(2019, 4, 1) <= cp.machineErrorDatas[i].getTo() <= datetime.datetime(2019, 5, 31):
+            listWithCorona.append(cp.machineErrorDatas[i])
+        else:
+            listWithoutCorona.append(cp.machineErrorDatas[i])
+            
+    listWithCorona.sort(key=lambda x: x.getErrorCode())
+    listWithoutCorona.sort(key=lambda x: x.getErrorCode())
+            
+    result = []
+    avg = listWithCorona[0].getTo() - listWithCorona[0].getOf()
+    counter = 1
+    for i in range(1, len(listWithCorona) - 1):
+        if listWithCorona[i-1].getErrorCode() == listWithCorona[i].getErrorCode():
+            avg += listWithCorona[i].getTo() - listWithCorona[i].getOf()
+            counter += 1
+        else:
+            avg = avg / counter
+            result.append((listWithCorona[i-1].getErrorCode(), avg.total_seconds() / 60))
+            
+            avg = listWithCorona[i].getTo() - listWithCorona[i].getOf()
+            counter = 1
+            
+    if counter > 0:
+        avg = avg / counter
+        result.append((listWithCorona[len(listWithCorona) - 1].getErrorCode(), avg.total_seconds() / 60))
         
+    print('--------------------------------------------------------------------------')
+    print(f'machineError: Avg Time of the errors for every errorCode while 04.19 - 05.19: {result}')
+        
+    result = []
+    avg = listWithoutCorona[0].getTo() - listWithoutCorona[0].getOf()
+    counter = 1
+    for i in range(1, len(listWithoutCorona) - 1):
+        if listWithoutCorona[i-1].getErrorCode() == listWithoutCorona[i].getErrorCode():
+            avg += listWithoutCorona[i].getTo() - listWithoutCorona[i].getOf()
+            counter += 1
+        else:
+            avg = avg / counter
+            result.append((listWithoutCorona[i-1].getErrorCode(), avg.total_seconds() / 60))
+            
+            avg = listWithoutCorona[i].getTo() - listWithoutCorona[i].getOf()
+            counter = 1
+            
+    if counter > 0:
+        avg = avg / counter
+        result.append((listWithoutCorona[len(listWithoutCorona) - 1].getErrorCode(), avg.total_seconds() / 60))
+        
+    print(f'machineError: Avg Time of the errors for every errorCode while the rest of the time: {result}')
+    
         
 def calculateAnalyze(pathOfAnalysis):
-    analyzeGroups()
-    print('--------------------------------------------------------------------------')
-    print(f'MachineError Data: Start Filtering at {datetime.datetime.now()}.')
-    
-    '''
-    Filter due to groupLength
-    '''
-    #tmp = []
-    #for i in range(len(cp.groupToMachineError)):
-    #    if 23 <= len(cp.groupToMachineError[i][0]) <= 32:
-    #        tmp.append(cp.groupToMachineError[i])
-    #cp.groupToMachineError = tmp
-    
-    #tmp = []
-    #for i in range(len(cp.groupToQualityControl)):
-    #    if 17 <= len(cp.groupToQualityControl[i][0]) <= 23:
-    #        tmp.append(cp.groupToQualityControl[i])
-    #cp.groupToQualityControl = tmp
-
-    
     '''
     Calculates the whole analysis of both data sets. The analysis is done for groups.
     '''
@@ -766,6 +812,10 @@ def calculateAnalyze(pathOfAnalysis):
     
         
 if __name__ == '__main__':
+    '''
+    pathOfAnalysis is the folder in which the datasets (all 4 tables, 2 per Dataset) are saved.
+    Do not change the names of the tables, so the program does recognize them.
+    '''
     pathOfAnalysis = '/Users/alexanderfuchs/Desktop/SS_21/Bachelorarbeit Material/Dataset/'
     
     cp.loadAllData( \

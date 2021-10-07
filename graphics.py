@@ -46,14 +46,13 @@ def drawPercentageOfErrorGroup():
     # show the graph
     plt.show()
     
-def drawGroupLengthDict(dictionary):
-    #dataframe = pd.DataFrame.from_dict(dictionary, orient='index', columns=['numberOfErrors'])
-    
-    dataframe = pd.DataFrame(dictionary.items(), columns=['groupLength', 'numberOfErrors'])
+def drawGroupLengthToDate(listGroupLengthToDate):
+    dataframe = pd.DataFrame(listGroupLengthToDate, columns=['Gruppengröße', 'Monat mit 1 = Jan 2019'])
 
-    # Plot the responses for different events and regions
-    sns.lineplot(x="groupLength", y="numberOfErrors", data=dataframe)
-    
+    # plot violin chart
+    sns.pairplot(dataframe, corner=True)
+
     # show the graph
     plt.show()
+    
     
