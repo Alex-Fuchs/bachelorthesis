@@ -5,8 +5,10 @@ Created on 12.05.2021
 
 This module has all the implementation, that was used for the analysis.
 So the join, the grouping and the calculation of the performance metrics
-is included in this module. Also most of the data preparation is done in this
-module. For example the majority filtering of the groups is done in this module.
+is included in this module. 
+
+Also most of the data preparation is done in this module. The majority
+filtering of the groups is done in this module.
 '''
 
 import collections
@@ -143,7 +145,7 @@ def joinAndGroupQualityControl(pathOfAnalysis):
     does not work. qualityControlToPerson is already sorted due to the algorithm before.
     The algorithm maps all the persons of one quality control to the quality control as a group.
     
-    the algorithm also includes one step of the  data preparation.
+    the algorithm also includes one step of the data preparation.
     '''
     with open(pathOfAnalysis + 'groupToQualityControl.csv', mode='w') as groupToQualityControlFile:
         writer = csv.writer(groupToQualityControlFile, delimiter=',',\
@@ -202,7 +204,7 @@ def joinAndGroup(pathOfAnalysis):
 
 def divideGroupToMachineError(earlyTwelve, nightTwelve, early, late, night):
     '''
-    Divides the groupToMachineErrors into the 5 shifts. This is necessary because it´s not
+    Divides the groupToMachineErrors by the 5 shifts. This is necessary because it´s not
     possible to compare the shifts. 
     '''
     for i in range(len(cp.groupToMachineError)):
@@ -232,10 +234,12 @@ def analyzeMachineError(groupToMachineErrorOfShift, shift):
     groupToMachineError has to be sorted by group first and errorCode second!!! Do not change
     the Sorting in csv_parsing. For every group and errorCode the average Time of the machineErrors
     with that errorCode and that group are calculated. Also For every group and errorCode the % of
-    the sum of all machineErrors with that errorCode and that group to the total working time
-    of the group is calculated. The total working time of groups is calculated approximative,
-    so the results of cp.percentageOfMachineErrorInTotalTime are inaccurate and have to be
-    viewed with caution!!! More details in calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift).
+    the sum of the intervals of all machineErrors with that errorCode and that group to the total working time
+    of the group is calculated. 
+    
+    The total working time of groups is calculated approximative, so the results of 
+    cp.percentageOfMachineErrorInTotalTime are inaccurate and have to be viewed with caution!!!
+    More details in calculateTimeOfAllGroups(groupToTime, groupToMachineErrorOfShift).
     
     The results are saved in cp.averageMachineErrorTime and cp.percentageOfMachineErrorInTotalTime.
     '''
@@ -371,7 +375,7 @@ def getShiftsOfPerson(person):
      
 def divideGroupToQualityControl(earlyTwelve, nightTwelve, early, late, night):
     '''
-    Divides the groupToQualityControls into the 5 shifts. This is necessary because it´s not
+    Divides the groupToQualityControls by the 5 shifts. This is necessary because it´s not
     possible to compare the shifts. 
     '''
     for i in range(len(cp.groupToQualityControl)):
@@ -516,7 +520,7 @@ def groupQualityControlsPerErrorCode(group, shift, productType, elementsOfProduc
     
 def calculatePercentages(group, shift, productType, elementsOfErrorCode, counterOfProductType):
     '''
-    Calculates for a group and a produtType and a errorCode the % of all errorGroups. Calculates also
+    Calculates for a group and a productType and a errorCode the % of all errorGroups. Calculates also
     for a group and a productType the % of one combination of errorCode and errorGroup. The quality controls
     of the group and the productType and the errorCode must already be given through elementsOfErrorCode. Also
     the counter for the productType and the group must be provided through counterOfProductType.
@@ -633,7 +637,7 @@ def writeAnalysisToCSV(pathOfAnalysis):
         
 def calculateAnalyze(pathOfAnalysis):
     '''
-    Calculates the whole analysis of both data sets. The analysis is done for groups.
+    Calculates the whole analysis of both data sets.
     '''
     print('--------------------------------------------------------------------------')
     print(f'MachineError Data: Start Analyze at {datetime.datetime.now()}.')

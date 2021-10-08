@@ -5,9 +5,9 @@ Created on 08.05.2021
 
 This module implements the loading of all .csv files.
 So the 4 tables of the 2 datasets are loaded in this module. Also
-the joined and grouped data is loaded in this module. The sorting
-of the lists is also done in this module after loading. Some
-data preparation is also done in this module.
+the joined, grouped data is loaded in this module. If the joined,
+grouped data cannot be loaded, it is calculated instead. The sorting
+of the lists is done after loading.
 '''
 
 import csv
@@ -103,7 +103,7 @@ def loadAllData(machineErrorPersons, machineErrors, qualityControlPersons, quali
     '''
     Loads all tables from the machineErrorDataset and the qualityControlDataset. Also all
     lists are sorted by the date of the entries (DESC). If there are two dates per entry
-    the list ist sorted by the end of the intervall (DESC).
+    the list is sorted by the end of the interval (DESC).
     '''
     global machineErrorDatas, machineErrorPersonShifts, qualityControlDatas, qualityControlPersonShifts
     

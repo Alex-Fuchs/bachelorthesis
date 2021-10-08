@@ -6,6 +6,11 @@ Created on 08.05.2021
 This module contains the classes for the representation of the entries of the
 .csv tables. So one entry is an object of one of the classes. The objects are
 programmed to be immutable. Only create new objects with the factory methods!!!
+
+Some data preparation is done in this module. The machine errors and the quality
+controls are filtered if they are near to a shift change (+ 1 hour, - 1 hour).
+Also all data that is too old is filtered (< 2019). Only appears 4 times with dates
+of the year 1968 (errors).
 '''
 
 from datetime import datetime
